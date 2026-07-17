@@ -33,6 +33,7 @@ function formatPost(p, idx) {
   const num = isUrgent(p) ? '🚨' : NUM_EMOJI[idx] ?? `${idx + 1}.`;
   const parts = [
     p.rooms ? `${p.rooms} חד'` : null,
+    p.size_sqm ? `${p.size_sqm} מ"ר` : null,
     p.neighborhood || null,
     p.price ? `${p.price.toLocaleString('he-IL')} ₪` : 'מחיר לא צוין',
     p.entry_date ? `כניסה: ${p.entry_date}` : null,

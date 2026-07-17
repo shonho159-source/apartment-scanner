@@ -27,11 +27,12 @@ const RESULT_SCHEMA = {
           },
           price: { type: ['integer', 'null'] },
           rooms: { type: ['number', 'null'] },
+          size_sqm: { type: ['integer', 'null'] },
           neighborhood: { type: ['string', 'null'] },
           entry_date: { type: ['string', 'null'] },
           is_broker: { type: 'boolean' },
         },
-        required: ['id', 'relevant', 'reason', 'post_type', 'price', 'rooms', 'neighborhood', 'entry_date', 'is_broker'],
+        required: ['id', 'relevant', 'reason', 'post_type', 'price', 'rooms', 'size_sqm', 'neighborhood', 'entry_date', 'is_broker'],
         additionalProperties: false,
       },
     },
@@ -50,8 +51,9 @@ function buildSystemPrompt() {
   if (c.budgetMax) rules.push(`תקציב מקסימלי: ${c.budgetMax} ₪ לחודש. אם המחיר בפוסט גבוה מזה — לא רלוונטי. אם לא צוין מחיר — אל תפסול על סמך המחיר בלבד.`);
   if (c.roomsMin || c.roomsMax) {
     const range = [c.roomsMin ? `לפחות ${c.roomsMin}` : null, c.roomsMax ? `לכל היותר ${c.roomsMax}` : null].filter(Boolean).join(', ');
-    rules.push(`מספר חדרים נדרש: ${range}. אם צוין בפוסט מספר חדרים מחוץ לטווח הזה (למשל דירת 2 חדרים כשהמינימום 2.5) — לא רלוונטי. אם מספר החדרים לא צוין כלל — אל תפסול על סמך זה בלבד.`);
+    rules.push(`מספר חדרים נדרש: ${range}. אם צוין בפוסט מספר חדרים מחוץ לטווח הזה (למשל דירת 2 חדרים כשהמינימום 2.5) — לא רלוונטי. דירת חדר, סטודיו או יחידת דיור — תמיד לא רלוונטי. אם מספר החדרים לא צוין כלל — אל תפסול על סמך זה בלבד.`);
   }
+  if (c.sizeMinSqm) rules.push(`שטח מינימלי: ${c.sizeMinSqm} מ"ר. אם צוין בפוסט שטח קטן מזה — לא רלוונטי. אם השטח לא צוין — אל תפסול על סמך זה בלבד.`);
   if (Array.isArray(c.neighborhoods) && c.neighborhoods.length) {
     rules.push(`שכונות/אזורים מועדפים: ${c.neighborhoods.join(', ')}. אם צוינה שכונה שאינה ברשימה — לא רלוונטי; אם לא ברור מהפוסט — השאר רלוונטי.`);
   }
@@ -65,7 +67,7 @@ function buildSystemPrompt() {
   }
   if (c.notes) rules.push(`הנחיות נוספות מהמשתמש: ${c.notes}`);
   rules.push(
-    'לכל פוסט חלץ גם: price (מחיר חודשי בש"ח, מספר בלבד או null), rooms (למשל 2.5 או null), neighborhood (שם השכונה/הרחוב או null), entry_date (מועד כניסה כפי שמופיע בטקסט או null), is_broker (האם נראה שזה מתווך), reason (משפט קצר בעברית שמנמק את ההחלטה).',
+    'לכל פוסט חלץ גם: price (מחיר חודשי בש"ח, מספר בלבד או null), rooms (למשל 2.5 או null), size_sqm (שטח במ"ר או null), neighborhood (שם השכונה/הרחוב או null), entry_date (מועד כניסה כפי שמופיע בטקסט או null), is_broker (האם נראה שזה מתווך), reason (משפט קצר בעברית שמנמק את ההחלטה).',
     'החזר תוצאה אחת לכל פוסט, עם ה-id המדויק שקיבלת.'
   );
   return rules.join('\n');
