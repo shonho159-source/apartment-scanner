@@ -1,0 +1,10 @@
+# סודות — לעולם לא לקומיט
+.env
+.env.*
+!.env.example
+
+# מצב ריצה מקומי
+data/
+
+node_modules/
+.DS_Store

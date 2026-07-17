@@ -1,0 +1,37 @@
+name: apartment-scan
+
+on:
+  schedule:
+    # 06:00 + 17:00 UTC = 09:00 + 20:00 שעון ישראל (קיץ). בחורף זז שעה אחורה.
+    - cron: '0 6,17 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      # שחזור מצב הדה-דופ בין ריצות (cache, best-effort).
+      - name: Restore state
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: apartment-scan-data-${{ github.run_id }}
+          restore-keys: apartment-scan-data-
+
+      - name: Run pipeline
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GREEN_API_ID_INSTANCE: ${{ secrets.GREEN_API_ID_INSTANCE }}
+          GREEN_API_TOKEN: ${{ secrets.GREEN_API_TOKEN }}
+          WHATSAPP_CHAT_ID: ${{ secrets.WHATSAPP_CHAT_ID }}
+        run: node src/pipeline.js

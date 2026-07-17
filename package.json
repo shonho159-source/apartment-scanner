@@ -1,0 +1,18 @@
+{
+  "name": "apartment-scanner",
+  "version": "1.0.0",
+  "description": "סורק דירות: סריקת קבוצות פייסבוק ציבוריות דרך Apify, סינון פוסטים רלוונטיים עם Claude, ודיווח מסודר בוואטסאפ פעמיים ביום.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/pipeline.js",
+    "scrape": "node src/scrape/apify.js",
+    "dry-run": "DRY_RUN=1 node src/pipeline.js",
+    "test-whatsapp": "node src/notify/whatsapp.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "groups": [
+    { "name": "קבוצה 101875683484689", "url": "https://www.facebook.com/groups/101875683484689/", "enabled": true },
+    { "name": "קבוצה 35819517694", "url": "https://www.facebook.com/groups/35819517694/", "enabled": true },
+    { "name": "קבוצה 457465901082882", "url": "https://www.facebook.com/groups/457465901082882/", "enabled": true },
+    { "name": "קבוצה 305724686290054", "url": "https://www.facebook.com/groups/305724686290054/", "enabled": true },
+    { "name": "Apartments Tel Aviv", "url": "https://www.facebook.com/groups/ApartmentsTelAviv/", "enabled": true },
+    { "name": "TLV Apartment", "url": "https://www.facebook.com/groups/tlvapartment/", "enabled": true },
+    { "name": "Tel Aviv Rentals", "url": "https://www.facebook.com/groups/telavivrentals/", "enabled": true },
+    { "name": "קבוצה 333022240594651", "url": "https://www.facebook.com/groups/333022240594651/", "enabled": true }
+  ],
+  "run": {
+    "actorId": "memo23~facebook-public-group-posts-scraper",
+    "windowHours": 14,
+    "resultsLimitPerGroup": 20,
+    "timeoutSecs": 300,
+    "memoryMbytes": 1024
+  }
+}
