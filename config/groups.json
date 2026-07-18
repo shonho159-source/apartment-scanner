@@ -11,7 +11,7 @@
   ],
   "run": {
     "actorId": "memo23~facebook-public-group-posts-scraper",
-    "windowHours": 14,
+    "windowHours": 17,
     "resultsLimitPerGroup": 20,
     "timeoutSecs": 300,
     "memoryMbytes": 1024
