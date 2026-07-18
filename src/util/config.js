@@ -18,4 +18,5 @@ mkdirSync(dataDir, { recursive: true });
 export const paths = {
   seen: join(dataDir, 'seen.json'),
   history: join(dataDir, 'history.jsonl'),
+  lastRun: join(dataDir, 'last-run.json'),
 };

@@ -9,6 +9,7 @@
 import 'dotenv/config';
 import { pathToFileURL } from 'node:url';
 import { groupsConfig } from '../util/config.js';
+import { windowHoursSinceLastRun } from '../util/window.js';
 
 const APIFY_BASE = 'https://api.apify.com/v2';
 
@@ -20,9 +21,10 @@ function buildInput(groups) {
   const run = groupsConfig.run || {};
   return {
     startUrls: groups.map((g) => ({ url: g.url })),
-    // משלמים רק על פוסטים שבאמת בתוך החלון — הסינון כאן חינם באקטור הזה.
-    onlyPostsNewerThanHours: run.windowHours ?? 16,
-    maxItems: run.resultsLimitPerGroup ?? 20,
+    // חלון אדפטיבי (מאז הריצה האחרונה + באפר) — משלמים רק על מה שחדש באמת,
+    // והסינון כאן חינם באקטור הזה.
+    onlyPostsNewerThanHours: windowHoursSinceLastRun(),
+    maxItems: run.resultsLimitPerGroup ?? 60,
     viewOption: 'CHRONOLOGICAL',
   };
 }

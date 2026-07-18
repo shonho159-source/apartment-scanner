@@ -4,8 +4,8 @@
 //        `DRY_RUN=1 node src/pipeline.js` להדפסה בלי שליחה.
 
 import 'dotenv/config';
-import { groupsConfig } from './util/config.js';
 import { scrapeGroups } from './scrape/apify.js';
+import { windowHoursSinceLastRun, commitLastRun } from './util/window.js';
 import { normalize } from './normalize.js';
 import { appendHistory } from './util/history.js';
 import { filterUnseen, commitSeen } from './dedupe.js';
@@ -18,9 +18,9 @@ async function main() {
   const raw = await scrapeGroups();
 
   const all = normalize(raw);
-  // סינון זמן בצד שלנו (חינם) במקום פילטר בתשלום ב-Apify: רק פוסטים מהחלון
-  // האחרון. פוסט בלי חותמת זמן נשאר — הדה-דופ ימנע כפילויות ממילא.
-  const windowHours = groupsConfig.run?.windowHours ?? 16;
+  // רשת ביטחון על החלון האדפטיבי (הסינון האמיתי נעשה בצד Apify, שם הוא חינם).
+  // פוסט בלי חותמת זמן נשאר — הדה-דופ ימנע כפילויות ממילא.
+  const windowHours = windowHoursSinceLastRun();
   const cutoff = Date.now() - windowHours * 3600_000;
   const posts = all.filter((p) => !p.time || new Date(p.time).getTime() >= cutoff);
   console.log(`✓ אחרי נירמול: ${all.length} פוסטים עם טקסט, ${posts.length} בחלון של ${windowHours} שעות`);
@@ -40,6 +40,7 @@ async function main() {
   // רושמים ל-seen רק פוסטים שסווגו בפועל — פוסט שה-batch שלו נכשל ייבדק שוב בריצה הבאה.
   if (process.env.DRY_RUN !== '1') {
     commitSeen(classified.filter((p) => p.classified));
+    commitLastRun();
   }
 
   console.log(`✅ סיום. נשלחו ${messages.length} הודעות (${relevant.length} דירות).`);
