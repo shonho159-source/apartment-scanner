@@ -29,22 +29,46 @@ function buildInput(groups) {
   };
 }
 
-async function runActor(actorId, input, token) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// הרצה אסינכרונית: התנעה → המתנה לסיום → משיכת התוצאות מה-dataset.
+// ה-endpoint הסינכרוני (run-sync) מוגבל ל-5 דקות — לא מספיק לריצות גדולות.
+export async function runActor(actorId, input, token) {
   const run = groupsConfig.run || {};
-  const url = `${APIFY_BASE}/acts/${actorId}/run-sync-get-dataset-items`
-    + `?token=${token}`
-    + `&timeout=${run.timeoutSecs ?? 300}`
-    + `&memory=${run.memoryMbytes ?? 1024}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(input),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`Apify actor ${actorId} failed: ${res.status} ${body.slice(0, 300)}`);
+  const startRes = await fetch(
+    `${APIFY_BASE}/acts/${actorId}/runs?token=${token}`
+      + `&timeout=${run.timeoutSecs ?? 1500}`
+      + `&memory=${run.memoryMbytes ?? 1024}`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    }
+  );
+  if (!startRes.ok) {
+    const body = await startRes.text().catch(() => '');
+    throw new Error(`Apify start ${actorId} failed: ${startRes.status} ${body.slice(0, 300)}`);
   }
-  return res.json();
+  const { id: runId, defaultDatasetId } = (await startRes.json()).data;
+
+  const deadline = Date.now() + (run.pollTimeoutSecs ?? 1800) * 1000;
+  let status = 'RUNNING';
+  while (Date.now() < deadline) {
+    await sleep(10_000);
+    const res = await fetch(`${APIFY_BASE}/actor-runs/${runId}?token=${token}`);
+    if (!res.ok) continue; // שגיאת רשת נקודתית — ננסה שוב בסיבוב הבא
+    status = (await res.json()).data.status;
+    if (!['RUNNING', 'READY'].includes(status)) break;
+  }
+  if (status !== 'SUCCEEDED') {
+    throw new Error(`Apify run ${runId} ended with status ${status}`);
+  }
+
+  const itemsRes = await fetch(`${APIFY_BASE}/datasets/${defaultDatasetId}/items?token=${token}&clean=true`);
+  if (!itemsRes.ok) {
+    throw new Error(`Apify dataset fetch failed: ${itemsRes.status}`);
+  }
+  return itemsRes.json();
 }
 
 // מחזיר [{...rawItem, _group: <שם הקבוצה>}]
@@ -76,7 +100,7 @@ export async function scrapeGroups() {
 }
 
 // הרצה עצמאית כבדיקת עשן: `node src/scrape/apify.js`
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   scrapeGroups().then((items) => {
     console.log(`\nסה"כ פוסטים: ${items.length}`);
     for (const it of items.slice(0, 3)) {

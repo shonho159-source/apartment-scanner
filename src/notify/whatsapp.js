@@ -36,7 +36,7 @@ export async function sendWhatsApp(messages) {
 }
 
 // בדיקת עשן עצמאית: `npm run test-whatsapp`
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   sendWhatsApp(['✅ בדיקת חיבור — סורק הדירות מחובר לוואטסאפ.'])
     .then(() => console.log('נשלח בהצלחה.'))
     .catch((err) => {

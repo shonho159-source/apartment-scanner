@@ -14,8 +14,9 @@
     "fallbackWindowHours": 17,
     "windowBufferHours": 2,
     "maxWindowHours": 26,
-    "resultsLimitPerGroup": 120,
-    "timeoutSecs": 300,
+    "resultsLimitPerGroup": 300,
+    "timeoutSecs": 1500,
+    "pollTimeoutSecs": 1800,
     "memoryMbytes": 1024
   }
 }
