@@ -133,6 +133,20 @@ export async function classify(posts) {
     const v = verdicts.get(p.id);
     // פוסט שהסיווג שלו נכשל לא מסומן רלוונטי, אבל גם לא ייכנס ל-seen — ראה pipeline.
     if (!v) return { ...p, relevant: false, classified: false };
-    return { ...p, ...v, classified: true };
+    return enforceHardRules({ ...p, ...v, classified: true });
   });
+}
+
+// אכיפה דטרמיניסטית של הכללים המספריים — לא סומכים על המודל בזה.
+// המודל מחלץ (rooms/size/price), והקוד פוסל כשמה שחולץ מפר את הקריטריונים.
+export function enforceHardRules(p) {
+  if (!p.relevant) return p;
+  const c = criteria;
+  const violations = [];
+  if (p.rooms != null && c.roomsMin && p.rooms < c.roomsMin) violations.push(`${p.rooms} חדרים < מינימום ${c.roomsMin}`);
+  if (p.rooms != null && c.roomsMax && p.rooms > c.roomsMax) violations.push(`${p.rooms} חדרים > מקסימום ${c.roomsMax}`);
+  if (p.size_sqm != null && c.sizeMinSqm && p.size_sqm < c.sizeMinSqm) violations.push(`${p.size_sqm} מ"ר < מינימום ${c.sizeMinSqm}`);
+  if (p.price != null && c.budgetMax && p.price > c.budgetMax) violations.push(`${p.price} ₪ > תקציב ${c.budgetMax}`);
+  if (!violations.length) return p;
+  return { ...p, relevant: false, reason: `נפסל אוטומטית (אכיפת קוד): ${violations.join('; ')}` };
 }

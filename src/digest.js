@@ -16,6 +16,37 @@ function sortForDigest(posts) {
   });
 }
 
+// מיזוג קרוס-פוסטים: אותה דירה שפורסמה בכמה קבוצות בניסוחים שונים.
+// ממזגים רק בהתאמה מלאה של חדרים+מחיר (כששניהם ידועים) + חפיפת שם רחוב/שכונה,
+// כדי לא למזג בטעות שתי דירות שונות.
+const GENERIC_TOKENS = new Set(['הצפון', 'צפון', 'הישן', 'ישן', 'תל', 'אביב', 'רחוב', 'שכונת', 'ליד', 'פינת', 'אזור']);
+
+function locationTokens(neighborhood) {
+  return new Set(
+    (neighborhood ?? '')
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((t) => t.length >= 3 && !GENERIC_TOKENS.has(t))
+  );
+}
+
+function sameListing(a, b) {
+  if (a.price == null || b.price == null || a.price !== b.price) return false;
+  if (a.rooms == null || b.rooms == null || a.rooms !== b.rooms) return false;
+  if (a.size_sqm != null && b.size_sqm != null && a.size_sqm !== b.size_sqm) return false;
+  const ta = locationTokens(a.neighborhood);
+  return [...locationTokens(b.neighborhood)].some((t) => ta.has(t));
+}
+
+function collapseCrossPosts(posts) {
+  const kept = [];
+  for (const p of posts) {
+    const dup = kept.find((q) => sameListing(q, p));
+    if (dup) dup.dupCount = (dup.dupCount ?? 1) + 1;
+    else kept.push({ ...p });
+  }
+  return kept;
+}
+
 function timeSlotLabel() {
   const hour = Number(
     new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: false, timeZone: 'Asia/Jerusalem' })
@@ -42,6 +73,7 @@ function formatPost(p, idx) {
   const meta = [
     p.is_broker ? 'תיווך' : 'ללא תיווך',
     p.group ? `קבוצה: ${p.group}` : null,
+    p.dupCount > 1 ? `פורסם ב-${p.dupCount} קבוצות` : null,
   ].filter(Boolean);
 
   const head = isUrgent(p)
@@ -61,7 +93,7 @@ export function buildDigest(relevantPosts, totalScanned) {
     return [`${header}\nנסרקו ${totalScanned} פוסטים — לא נמצאו דירות רלוונטיות בסריקה זו.`];
   }
 
-  const sorted = sortForDigest(relevantPosts);
+  const sorted = sortForDigest(collapseCrossPosts(relevantPosts));
   const urgentCount = sorted.filter(isUrgent).length;
   const intro = `${header}\nנמצאו ${sorted.length} דירות רלוונטיות מתוך ${totalScanned} פוסטים`
     + (urgentCount ? ` — מתוכן ${urgentCount} 🚨 מתחת ל-${criteria.urgentPriceMax.toLocaleString('he-IL')} ₪!` : ':');
